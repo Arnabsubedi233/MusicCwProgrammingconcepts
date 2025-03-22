@@ -4,6 +4,9 @@ import org.example.DataAccessObject.SongDAO;
 import org.example.DataAccessObject.SongCSVDAO;
 import org.example.model.song;
 import org.example.service.songService;
+import org.example.DataAccessObject.AvaiableSongsCSVDAO;
+import org.example.model.playableSongs;
+import org.example.service.PlaySongService;
 
 import java.util.List;
 import java.util.Scanner;
@@ -65,7 +68,13 @@ public class Main{
                     List<song> allSongs = songService.getAllSongs();
                     System.out.println("All Songs:");
                     for (song s : allSongs) {
-                        System.out.println(s);
+                        System.out.printf(
+                                "| %-3d | %-25s | %-25s | %-10d |%n",
+                                s.getId(),
+                                s.getTitle(),
+                                s.getArtist(),
+                                s.getPlayCount()
+                        );
                     }
                     System.out.println();
                     break;
@@ -84,12 +93,68 @@ public class Main{
                     List<song> filteredSongs = songService.getSongsAbovePlayCount(minPlays);
                     System.out.println("Songs with play count over " + minPlays + ":");
                     for (song s : filteredSongs) {
-                        System.out.println(s);
+                        System.out.printf(
+                                "| %-3d | %-25s | %-25s | %-10d |%n",
+                                s.getId(),
+                                s.getTitle(),
+                                s.getArtist(),
+                                s.getPlayCount()
+                        );
                     }
                     System.out.println();
                     break;
 
                 case "5":
+                    AvaiableSongsCSVDAO availableDAO = new AvaiableSongsCSVDAO();
+                    List<playableSongs> availableSongs = availableDAO.getAllAvailableSongs();
+
+                    if (availableSongs.isEmpty()) {
+                        System.out.println("No available songs to play.");
+                        break;
+                    }
+
+                    for (playableSongs s : availableSongs) {
+                        System.out.printf(
+                                "| %-3d | %-25s | %-25s | %-10d |%n",
+                                s.getId(),
+                                s.getTitle(),
+                                s.getArtist(),
+                                s.getPlayCount()
+                        );
+                    }
+
+                    System.out.println("Enter the ID of the song you want to play:");
+                    int playId;
+                    try {
+                        playId = Integer.parseInt(scanner.nextLine());
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Returning to main menu...\n");
+                        break;
+                    }
+
+                    playableSongs chosenSong = null;
+                    for (playableSongs s : availableSongs) {
+                        if (s.getId() == playId) {
+                            chosenSong = s;
+                            break;
+                        }
+                    }
+
+                    if (chosenSong == null) {
+                        System.out.println("Song with ID " + playId + " not found.");
+                    } else {
+                        String audioPath = "src/main/resources/audio/" + chosenSong.getAudioFile();
+                        System.out.println("Playing: " + chosenSong.getTitle() + " by " + chosenSong.getArtist()
+                                + "\nFile: " + audioPath);
+
+                        PlaySongService.openAudioFile(audioPath);
+
+                        System.out.println("Playback finished.\n");
+                    }
+
+                    break;
+
+                case "6":
                     // Exit
                     running = false;
                     break;
@@ -107,10 +172,11 @@ public class Main{
     private static void printMenu() {
         System.out.println("==== Music Streaming CLI ====");
         System.out.println("1. Add a new song");
-        System.out.println("2. Remove a song (by ID)");
+        System.out.println("2. Remove a song");
         System.out.println("3. Print all songs");
         System.out.println("4. Print songs above a given play count");
-        System.out.println("5. Exit");
+        System.out.println("5. Play a song");
+        System.out.println("6. Exit");
         System.out.print("Please choose an option: ");
     }
 }
